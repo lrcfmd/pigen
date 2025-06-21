@@ -1,0 +1,19 @@
+name: pigen
+channels:
+  - conda-forge
+dependencies:
+  - conda-forge::pytorch
+  - conda-forge::pytorch-lightning
+  - conda-forge::pytorch-scatter
+  - rusty1s::pytorch-geometric
+  - conda-forge::p-tqdm
+  - ninja
+  - omegaconf
+  - pymatgen
+  - scikit-learn
+  - einops
+  - python==3.10.16
+  - sfe1ed40::hydra-core
+  - conda-forge::pyxtal
+  - conda-forge::python-dotenv
+  - conda-forge::chemparse
