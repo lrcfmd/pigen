@@ -1,5 +1,4 @@
 *.pyc
 __pycache__/
-data/alex_entropy_159/
+data/Alex_MP_20_M_LED/*.csv
 checkpoints/*.ckpt
-

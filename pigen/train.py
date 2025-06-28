@@ -19,18 +19,6 @@ from pigen.assets.simple_dataset import SimpleCrystDataset
 from pigen.common.utils import combine_and_save_to_yaml, set_logger
 from pigen.settings import config
 
-def parse_args():
-    parser = argparse.ArgumentParser(description='Run Conditional PIGEN model Training')
-    parser.add_argument('--data_name', type=str, default='Alex_MP_20_M_LED',  help='Name of the dataset')
-    parser.add_argument('--prop', type=str, nargs='+', default=['entropy_sum', 'target_energy'], help='Conditioning properties')
-    parser.add_argument('--p_cond', type=float, default=0.4, help='Probability of conditioning for CFG')
-    parser.add_argument('--ckpt_path', type=str, default=None, help='Path to the checkpoint to load')
-    parser.add_argument('--log', type=bool, default=False, help='Enable metric logging')
-    parser.add_argument('--gpus', type=int, default=1,  help='Number of gpus')
-    parser.add_argument('--random_state', type=int, default=42,  help='Random state for reproducibility')
-    parser.add_argument('--experiment', type=str, default='dummy',  help='Folder to place the ckpt')
-    return parser.parse_args()
-
 def update_config_with_args(args):
     if args.prop:
         config.data.prop = args.prop
@@ -129,6 +117,19 @@ def main():
 
     logger.info(f'Fitting the model with scheduler: {config.scheduler}')
     trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Run Conditional PIGEN model Training')
+    parser.add_argument('--data_name', type=str, default='Alex_MP_20_M_LED',  help='Name of the dataset')
+    parser.add_argument('--prop', type=str, nargs='+', default=['entropy_sum', 'target_energy'], help='Conditioning properties')
+    parser.add_argument('--p_cond', type=float, default=0.4, help='Probability of conditioning for CFG')
+    parser.add_argument('--ckpt_path', type=str, default=None, help='Path to the checkpoint to load')
+    parser.add_argument('--log', type=bool, default=False, help='Enable metric logging')
+    parser.add_argument('--gpus', type=int, default=1,  help='Number of gpus')
+    parser.add_argument('--random_state', type=int, default=42,  help='Random state for reproducibility')
+    parser.add_argument('--experiment', type=str, default='dummy',  help='Folder to place the ckpt')
+    return parser.parse_args()
 
 if __name__ == '__main__':
     args = parse_args()
