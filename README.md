@@ -10,7 +10,7 @@ conda activate pigen
 pip install -e .
 
 ### Data used for training and the trained model checkpoint can be accessed at
-[https://huggingface.co/datasets/UoLiverpool/Alex_MP_20_M_LED/tree/main](https://huggingface.co/datasets/UoLiverpool/Alex_MP_20_M_LED/tree/main)
+[https://huggingface.co/datasets/UoLiverpool/Alex_MP_20_M_LED/](https://huggingface.co/datasets/UoLiverpool/Alex_MP_20_M_LED/)
 
 ### Code Base and Attribution
 This repository builds on the foundation of the open-source project https://github.com/jiaor17/DiffCSP, originally implementing Denoising Diffusion Probabilistic Model for crystal structure prediction.
@@ -32,7 +32,7 @@ eval/ - chemistry-informed structure featurisation and evaluation tools
 common/utils.py — shared utility functions
 
 ### Tests
-Download model checkpoint: [huggingface.co/your-username/your-model-repo](https://huggingface.co/your-username/your-model-repo)
+Download model checkpoint: [huggingface.co/DeepDrew/PIGEN/](https://huggingface.co/DeepDrew/PIGEN/)
 
 ```bash
 wget https://huggingface.co/your-username/your-model-repo/resolve/main/dummy_ckpt
