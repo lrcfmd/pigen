@@ -14,13 +14,14 @@ Original License: MIT
 import math
 import pandas as pd
 import numpy as np
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 import torch
 import torch.nn as nn
 from torch.autograd import Function
 import torch.nn.functional as F
 import pytorch_lightning as pl
 from tqdm import tqdm
+from torch_geometric.data import Batch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.optim as optim
 import torch.distributed as dist
@@ -465,23 +466,23 @@ class CSPDiffusion(BaseModule):
         diff_ratio: float = 1.0,
         step_lr: float = 1e-5,
         guidance: float = 3.0,
-        targets: List[float] = [4.0, 2.0],
+        targets: List[float] = [4.0, 2.0]
     ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
-       """
-       Reverse diffusion with classifier-free guidance conditioned on target properties.
-
-       Args:
-           batch: Input batch with atomic info, lattice, etc.
-           diff_ratio (float): Noise ratio during sampling.
-           step_lr (float): Step size for predictor-corrector schedule.
-           guidance (float): Guidance strength; higher means more reliance on conditioning.
-           targets (List[float]): List of target values for each conditioned property,
-                                  scaled internally using self.scaler.
-
-       Returns:
-           traj_0 (Dict): Final structures at t=0.
-           traj_stack (Dict): All structures over trajectory (T+1 steps).
-       """
+        """
+        Reverse diffusion with classifier-free guidance conditioned on target properties.
+        
+        Args:
+            batch: Input batch with atomic info, lattice, etc.
+            diff_ratio (float): Noise ratio during sampling.
+            step_lr (float): Step size for predictor-corrector schedule.
+            guidance (float): Guidance strength; higher means more reliance on conditioning.
+            targets (List[float]): List of target values for each conditioned property,
+                                   scaled internally using self.scaler.
+        
+        Returns:
+            traj_0 (Dict): Final structures at t=0.
+            traj_stack (Dict): All structures over trajectory (T+1 steps).
+        """
 
         batch_size = batch.num_graphs
 

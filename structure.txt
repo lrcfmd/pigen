@@ -1,0 +1,29 @@
+.
+├── checkpoints
+├── data
+│   └── Alex_MP_20_M_LED/
+├── environment.yml
+├── log
+├── pigen
+│   ├── __init__.py
+│   ├── assets/
+│   ├── common/
+│   ├── eval/
+│   ├── generate.py
+│   ├── normalization
+│   ├── partial_sample.py
+│   ├── settings.py
+│   └── train.py
+├── README.md
+├── setup.py
+├── tests
+│   ├── dummy_data/
+│   ├── dummy_logs/
+│   ├── fixtures/
+│   ├── conftest.py
+│   ├── test_dependecies.py
+│   ├── test_dummy_generate.py
+│   ├── test_dummy_training.py
+│   ├── test_pd_structure_parsing.py
+│   └── test_torch_installation.py
+└── verify_environment_installs.py

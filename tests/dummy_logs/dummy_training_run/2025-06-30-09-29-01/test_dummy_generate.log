@@ -1,0 +1,10 @@
+2025-06-30 11:57:28,641 | INFO | Loading model checkpoint from: /Users/andrij/Programmes/pigen/tests/dummy_logs/dummy_training_run/2025-06-30-09-29-01
+2025-06-30 11:57:28,645 | INFO | Using latest checkpoint: /Users/andrij/Programmes/pigen/tests/dummy_logs/dummy_training_run/2025-06-30-09-29-01/epoch=0-step=1.ckpt
+2025-06-30 11:57:30,750 | INFO | CUDA not available, running on CPU
+2025-06-30 11:57:30,750 | INFO | Sampling diffusion model for 3 total runs
+2025-06-30 11:57:30,751 | INFO | Dataset and DataLoader created with batch_size=3
+2025-06-30 11:57:30,755 | INFO | Using conditional sampling, guidance: 2, targets: [9, 0.7]
+2025-06-30 12:02:14,972 | INFO | Diffusion sampling completed in 284.22 seconds
+2025-06-30 12:02:14,974 | INFO | Saving results to: /Users/andrij/Programmes/pigen/tests/dummy_logs/dummy_generation_run
+2025-06-30 12:02:14,974 | INFO | Generating crystal list
+2025-06-30 12:02:14,995 | INFO | Saved structures CSV to /Users/andrij/Programmes/pigen/tests/dummy_logs/dummy_generation_run/denovo_[9, 0.7]_2.csv
