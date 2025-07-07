@@ -49,6 +49,12 @@ Run:
 ```bash
 pytest tests --disable-warnings
 ```
+## Run with Docker
+
+```bash
+docker build -t myproject .
+docker run myproject
+```
 
 ### Project structure
 
