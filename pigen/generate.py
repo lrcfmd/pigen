@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import time
 from pathlib import Path
 
@@ -7,6 +8,7 @@ import numpy as np
 import pandas as pd
 from pymatgen.io.cif import CifWriter
 import torch
+from torch import Tensor
 from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 from torch.utils.data import Dataset
@@ -27,9 +29,9 @@ RECOMMENDED_STEP_LR = {'gen': {
                               }
 
 def diffusion(
-    logger: Logger 
+    logger: logging.Logger,
     loader: DataLoader,
-    model: Union[BaseModel, torch.nn.Module],
+    model: Union[torch.nn.Module],
     step_lr: float,
     guidance: Optional[float] = None,
     targets: Optional[Tensor] = None
@@ -240,15 +242,15 @@ def main(
     df.to_csv(output_file, index=False)
     logger.info(f'Saved structures CSV to {output_file}')
 
-def parse_args()
+def parse_args():
     parser = argparse.ArgumentParser(description='Generating De Novo structures using a trained model')
-    parser.add_argument('--model_path', type=str, default=f'{config.LOG_DIR}/dummy_ckpt',  help='Ckpt of trained model')
+    parser.add_argument('--model_path', type=str, default=config.PATHS.CHECKPOINT_DIR,  help='Ckpt of trained model')
     parser.add_argument('--save_path', type=str, default=None, help='Path to store generated structures.')
     parser.add_argument('--dataset', type=str, default='full_data', help='Refernce dataset to define p(N) where N is the number of atoms in the material to be generated.')
     parser.add_argument('--step_lr', type=float, default=5e-6, help='Step LR for SMLD')
     parser.add_argument('--guidance', type=float, default=2.0, help='Guidance strength')
     parser.add_argument('--num_batches_to_samples', type=str, default=10, help='Num. of batches to sample.')
-    parser.add_argument('--targets', type=float, nargs='+', default=None, help='Targets for conditional generation. Need to follow the original order for training E.g., Entropy_cmpt [9.0, 0.7].')    
+    parser.add_argument('--targets', type=float, nargs='+', default=[9.0, 0.7], help='Targets for conditional generation. Need to follow the original order for training E.g., Entropy_cmpt [9.0, 0.7].')    
     parser.add_argument('--batch_size', type=int, default=100, help='Batch size')
     return  parser.parse_args()
 

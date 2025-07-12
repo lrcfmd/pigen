@@ -11,7 +11,6 @@ class Paths:
     LOG_DIR: Path = field(default_factory=lambda: PROJECT_ROOT / 'log')
     CHECKPOINT_DIR: Path = field(default_factory=lambda: PROJECT_ROOT / 'checkpoints')
 
-
 @dataclass
 class DataParams:
     primitive: bool = True

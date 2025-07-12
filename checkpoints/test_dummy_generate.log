@@ -1,0 +1,2 @@
+2025-07-12 14:04:57,782 | INFO | Loading model checkpoint from: /Users/andrij/Programmes/pigen/checkpoints
+2025-07-12 14:04:57,786 | INFO | Using latest checkpoint: /Users/andrij/Programmes/pigen/checkpoints/pigen_CE_epochs=1000-step215150.ckpt
