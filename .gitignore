@@ -2,3 +2,4 @@
 __pycache__/
 data/Alex_MP_20_M_LED/*.csv
 checkpoints/*.ckpt
+*.ckpt
