@@ -3,13 +3,19 @@
 ## Physics Informed Generation (PIGEN) of Crystal Structures 
 
 ### Setup environment
+```bash
 conda env create -f environment.yml
 conda activate pigen
+```
+
+All dependencies are managed via conda; setup.py is only for local package registration:
 
 ### Install package (editable mode)
+```bash
 pip install -e .
+```
 
-### Data used for training and the trained model checkpoint can be accessed at
+### Data used for training can be accessed at
 [https://huggingface.co/datasets/UoLiverpool/Alex_MP_20_M_LED/](https://huggingface.co/datasets/UoLiverpool/Alex_MP_20_M_LED/)
 
 ### Code Base and Attribution
@@ -26,16 +32,16 @@ We extend and adapt the original DiffCSP codebase with several key contributions
 
 These additions are primarily implemented in:
 assets/diffusion_pi.py — physics-aware sampling logic
-training.py and generation.py — training and inference entry points
-partial_csp.py - inference with partially defined chemical composition, e.g., for Li-based materials
+train.py and generate.py — training and inference entry points
+sample.py - inference with multi-optimisation of properties via classifier-free guidance
+partial_sample.py - inference with partially defined chemical composition, e.g., for Li-based materials
 eval/ - chemistry-informed structure featurisation and evaluation tools
 common/utils.py — shared utility functions
 
 ### Tests
 Download model checkpoint: [huggingface.co/DeepDrew/PIGEN/](https://huggingface.co/DeepDrew/PIGEN/)
-
 ```bash
-wget https://huggingface.co/your-username/your-model-repo/resolve/main/dummy_ckpt
+wget https://huggingface.co/DeepDrew/PIGEN/pigen_CE_step215150.ckpt
 ```
 After downloading, place the checkpoint file in:
 ```bash
@@ -49,12 +55,17 @@ Run:
 ```bash
 pytest tests --disable-warnings
 ```
-## Run with Docker
+### Run with Docker
+*Note: The Docker image is intentionally left with a flexible entry point (/bin/bash) to allow the user to either train or generate as needed, following the instructions below. This design choice supports both CPU and GPU environments.*
 
 ```bash
-docker build -t myproject .
-docker run myproject
+docker build -t pigen .
+docker run --rm pigen
 ```
+
+### Model training
+For training with 
+
 
 ### Project structure
 
