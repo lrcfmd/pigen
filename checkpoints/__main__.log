@@ -1,6 +1,0 @@
-2025-07-12 13:58:45,300 | INFO | Loading model checkpoint from: /Users/andrij/Programmes/pigen/checkpoints
-2025-07-12 13:58:45,304 | INFO | Using latest checkpoint: /Users/andrij/Programmes/pigen/checkpoints/pigen_CE_epochs=1000-step215150.ckpt
-2025-07-12 13:58:47,309 | INFO | CUDA not available, running on CPU
-2025-07-12 13:58:47,309 | INFO | Sampling diffusion model for 1000 total runs
-2025-07-12 13:58:47,311 | INFO | Dataset and DataLoader created with batch_size=100
-2025-07-12 13:58:47,319 | INFO | Using conditional sampling, guidance: 2.0, targets: [9.0, 0.7]

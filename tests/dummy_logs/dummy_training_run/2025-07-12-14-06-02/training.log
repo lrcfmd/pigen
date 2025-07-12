@@ -1,7 +1,0 @@
-2025-07-12 14:06:02,916 | INFO | Trainer initialized on CPU with fast_dev_run
-2025-07-12 14:06:02,917 | INFO | Reading data from: /Users/andrij/Programmes/pigen/tests/dummy_data/dummy_train.csv
-2025-07-12 14:06:02,926 | INFO | Data is read from /Users/andrij/Programmes/pigen/tests/dummy_data
-2025-07-12 14:06:02,933 | INFO | Dataset are set with SimpleCrystDataset
-2025-07-12 14:06:02,933 | INFO | DataLoaders are set with batch_size: 24
-2025-07-12 14:06:04,732 | INFO | Model diffusion initialized with parameters: ModelParams(latent_dim=0, p_cond=0.4, cost_coord=1.0, cost_lattice=1.0, time_dim=256, cost_type=20.0, cost_cmpt=1.0, max_neighbors=20, radius=7.0, timesteps=1000, optim=OptimizerParams(use_lr_scheduler=True, lr=0.001, weight_decay=0.0, betas=[0.9, 0.999], eps=1e-08, lr_patience=30, lr_factor=0.6, min_lr=0.0001))
-2025-07-12 14:06:04,732 | INFO | Fitting the model with scheduler: SchedulerParams(scheduler_mode='cosine')
