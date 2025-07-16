@@ -19,7 +19,7 @@ pip install -e .
 [https://huggingface.co/datasets/UoLiverpool/Alex_MP_20_M_LED/](https://huggingface.co/datasets/UoLiverpool/Alex_MP_20_M_LED/)
 
 
-### Training the model
+### Model training
 For re-training the model with the default dataset - Alex_MP_20_MLED, run:
 
 ```bash
@@ -40,9 +40,7 @@ After downloading, place the checkpoint file in:
 ```bash
 checkpoints/
 ```
-This ensures tests/test_dummy_generate.py and pigen/generate.py scripts can locate it.
-*Note: Large files (>100 MB) are stored externally to keep the repository lightweight.
-By default, the test_dummy_generate.py test is skipped if the checkpoint is not found*
+This ensures pigen/generate.py can locate it.
 
 Run
 ```bash
@@ -50,25 +48,16 @@ cd pigen
 python generate.py
 ```
 
-### Code Base and Attribution
-This repository builds on the foundation of the open-source project https://github.com/jiaor17/DiffCSP, originally implementing Denoising Diffusion Probabilistic Model for crystal structure prediction.
+### Code Base and Key Contributions
 
-### Enhancements in This Project
-We extend and adapt the original DiffCSP codebase with several key contributions:
+This repository builds on [DiffCSP](https://github.com/jiaor17/DiffCSP), an open-source implementation of denoising diffusion probabilistic models for crystal structure prediction. We have further developed and extended it as described below.
+
  - Physics-informed logic integrated into the sampling process
  - Conditional generation with target-guided control via classification-free guidance
- - Featurised dataset with local chemical and structural environment feature, enabling out-of-distributiion extrapolation
+ - Featurised dataset with local chemical and structural environment feature, enabling out-of-distribution extrapolation
  - Chemistry-informed structure evaluation tools
  - Modular refactoring for better reproducibility and configuration management.
 - Support for PyTorch Distributed Data Parallel to accelerate large-scale training across multiple GPUs or nodes
-
-These additions are primarily implemented in:
-assets/diffusion_pi.py — physics-aware sampling logic
-train.py and generate.py — training and inference entry points
-sample.py - inference with multi-optimisation of properties via classifier-free guidance
-partial_sample.py - inference with partially defined chemical composition, e.g., for Li-based materials
-eval/ - chemistry-informed structure featurisation and evaluation tools
-common/utils.py — shared utility functions
 
 ### Tests
 Run:
@@ -90,13 +79,8 @@ docker run --rm pigen
 ```bash
 docker run --rm --gpus all pigen
 ```
-
-### Model training
-For training with 
-
-
 ### Project structure
-
+```text
 ├── checkpoints
 ├── data
 │   └── Alex_MP_20_M_LED/
@@ -125,7 +109,7 @@ For training with
 │   ├── test_pd_structure_parsing.py
 │   └── test_torch_installation.py
 └── verify_environment_installs.py
-
+```
 
 ### License and Credit
 The original repository DiffCSP licensed under the MIT License.
