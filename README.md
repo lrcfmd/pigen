@@ -1,5 +1,3 @@
-**Physics-Informed Generative AI framework for crystal structure prediction and design.**
-
 ## Physics Informed Generation (PIGEN) of Crystal Structures 
 
 ### Setup environment
