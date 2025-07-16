@@ -1,4 +1,5 @@
 ## Physics Informed Generation (PIGEN) of Crystal Structures 
+PIGEN (Physics Informed Generation) is a framework for generating novel crystal structures by integrating physics-informed sampling, chemically guided control, and structural evaluation into a denoising diffusion model. Building on DiffCSP, PIGEN enables targeted generation beyond known chemical spaces and supports out-of-distribution extrapolation. This enables the generation of chemically and structurally diverse, physically plausible crystal candidates, yielding a higher fraction of stable structures per batch and achieving greater chemical and structural diversity than frameworks such as DiffCSP or MatterGen (as demonstrated in our benchmarks).
 
 ### Setup environment
 ```bash
