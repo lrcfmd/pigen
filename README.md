@@ -104,7 +104,6 @@ docker run --rm --gpus all pigen
 │   ├── fixtures/
 │   ├── conftest.py
 │   ├── test_dependecies.py
-│   ├── test_dummy_generate.py
 │   ├── test_dummy_training.py
 │   ├── test_pd_structure_parsing.py
 │   └── test_torch_installation.py
