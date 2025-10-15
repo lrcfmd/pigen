@@ -83,7 +83,12 @@ class SimpleCrystDataset(Dataset):
             scaled_props = None
         else:
             if not self.cat_prop:
-                scaled_props = np.column_stack([scaler.transform(data_dict[prop]) for prop, scaler in zip(self.prop, self.scaler)])
+                #scaled_props = np.column_stack([scaler.transform(data_dict[prop]) for prop, scaler in zip(self.prop, self.scaler)])
+                transformed = [
+                        np.zeros((1,)) if t is None else t
+                        for t in (scaler.transform(data_dict[prop]) for prop, scaler in zip(self.prop, self.scaler))
+                        ]
+                scaled_props = np.column_stack(transformed)
             else:
                 scaled_props = np.array(data_dict[self.prop[0]]).reshape(-1,1)
                 print('Running SimpleDataset scaled Props:', self.prop, self.scaler)

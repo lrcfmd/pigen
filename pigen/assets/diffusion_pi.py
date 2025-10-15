@@ -6,7 +6,7 @@ for crystal structure prediction.
 Modifications include physics-informed logic for equivariant
 diffusion training, and integration with classifier-free guidance
 for targeted-property (including chemical and structural diversity)
-de novo generation of crystal structures.
+generation of crystal structures.
 
 Original License: MIT
 """
@@ -263,7 +263,6 @@ class CSPDiffusion(BaseModule):
                                               condition=batch.y,
                                               stage='train')
 
-        # sigmas_per_atom * rand_x cause for fractional it's U(0,1) asymptotically (0 mean)
         tar_x = d_log_p_wrapped_normal(sigmas_per_atom * rand_x, sigmas_per_atom) / torch.sqrt(sigmas_norm_per_atom)
 
         loss_lattice = F.mse_loss(pred_l, rand_l)
@@ -271,20 +270,28 @@ class CSPDiffusion(BaseModule):
         loss_type = F.mse_loss(pred_t, rand_t)
 
         # add cmpt to loss
-        pred_cmpt = self.calculate_cmpt(pred_t.detach(), pred_l.detach(), batch.batch, c0)
+        type_prob = pred_t.softmax(dim=-1)
+        pred_cmpt = self.calculate_cmpt(type_prob, pred_l, batch.batch, c0)
         target_cmpt = batch.target_energy.squeeze(-1).to(dtype=torch.float32)
+
         pred_cmpt = torch.nan_to_num(pred_cmpt, nan=0.0, posinf=1e5, neginf=-1e5)
         target_cmpt = torch.nan_to_num(target_cmpt, nan=0.0, posinf=1e5, neginf=-1e5)
+        # sharp gradients
+        #loss_cmpt = F.mse_loss(pred_cmpt, target_cmpt)
+        #loss_cmpt = torch.clamp(loss_cmpt, min=1e-6, max=1e5)
+        #loss_cmpt = weighted_loss_component(loss_cmpt)
 
-        loss_cmpt = F.mse_loss(pred_cmpt, target_cmpt)
-        loss_cmpt = torch.clamp(loss_cmpt, min=1e-6, max=1e5)
-        loss_cmpt = weighted_loss_component(loss_cmpt)
+        # soft log cosh:
+        loss_cmpt = torch.log(torch.cosh(pred_cmpt - target_cmpt)).mean()
+
+        # soft sigmoid
+        #loss_cmpt = torch.sigmoid(1 * (pred_cmpt - target_cmpt)**2).mean()
 
         loss = (
         self.hparams.cost_lattice * loss_lattice +
         self.hparams.cost_coord * loss_coord +
         self.hparams.cost_type * loss_type +
-        self.hparams.cost_cmpt *loss_cmpt)
+        self.hparams.cost_cmpt * loss_cmpt)
 
         return {'loss'         : loss,
                 'loss_lattice' : loss_lattice,
