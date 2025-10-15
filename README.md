@@ -52,7 +52,7 @@ python generate.py
 This repository builds on [DiffCSP](https://github.com/jiaor17/DiffCSP), an open-source implementation of denoising diffusion probabilistic models for crystal structure prediction. We have further developed and extended it as described below.
 
  - Physics-informed logic integrated into the sampling process
- - Conditional generation with target-guided control via classification-free guidance
+ - Conditional generation with target-guided control via classifier-free guidance
  - Featurised dataset with local chemical and structural environment feature, enabling out-of-distribution extrapolation
  - Chemistry-informed structure evaluation tools
  - Modular refactoring for better reproducibility and configuration management.
