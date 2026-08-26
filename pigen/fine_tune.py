@@ -122,16 +122,27 @@ def main():
                      f"{len(config.data.prop)} vs {len(config.data.prop_weights)}")
         raise ValueError("prop and prop_weights must have the same length!")
 
-
     model = CSPDiffusion(**asdict(config.model), **asdict(config.data), **asdict(config.scheduler))
     logger.info(f'Model diffusion initialized with parameters: {config.model}')
+
+    #=============== Fine tuning ===================
+    # Load checkpoint manually, pop mismatched keys
+    ckpt = torch.load(config.checkpoint.ckpt_path, map_location='cpu')
+    state_dict = ckpt['state_dict']
+    
+    # Remove property-specific layers you want to re-initialise
+    keys_to_drop = [k for k in state_dict if 'cond_emb' in k]
+    for k in keys_to_drop:
+        del state_dict[k]
+    
+    model.load_state_dict(state_dict, strict=False)  # strict=False lets missing keys re-init
 
     #Passing scalers to model
     model.scaler = train_dataset.scaler.copy()
     model.lattice_scaler = train_dataset.lattice_scaler.copy()
 
     logger.info(f'Fitting the model with scheduler: {config.scheduler}')
-    trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader, ckpt_path=config.checkpoint.ckpt_path)
+    trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader, ckpt_path=None)
     if dist.is_initialized():
         dist.destroy_process_group()
 
@@ -139,7 +150,7 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser(description='Run Conditional PIGEN model Training')
     parser.add_argument('--data_name', type=str, default='Alex_MP_20_M_LED',  help='Name of the dataset')
-    parser.add_argument('--prop', type=str, nargs='+', default=['entropy_sum', 'target_energy'], help='Conditioning properties')
+    parser.add_argument('--prop', type=str, nargs='+', default=['fom_nso'], help='Conditioning properties')
     parser.add_argument('--p_cond', type=float, default=0.4, help='Probability of conditioning for CFG')
     parser.add_argument('--ckpt_path', type=str, default=None, help='Path to the checkpoint to load')
     parser.add_argument('--log', action='store_true', default=False, help='Enable metric logging')

@@ -15,7 +15,9 @@ from torch.utils.data import Dataset
 from typing import List, Optional, Tuple, Union 
 import yaml
 
-from pigen.assets.diffusion_pi import CSPDiffusion
+#from pigen.assets.diffusion_pi import CSPDiffusion
+#from pigen.assets.diffusion_pi_cmptdiff import CSPDiffusion
+from pigen.assets.diffusion_pigate import CSPDiffusion, ConstrainedCSPDiffusion
 from pigen.common.constants import TRAIN_DIST
 from pigen.common.utils import set_logger
 from pigen.eval.eval_utils import (
@@ -23,6 +25,9 @@ from pigen.eval.eval_utils import (
         get_pymatgen,
         lattices_to_params_shape)
 from pigen.settings import PROJECT_ROOT, config
+
+from pigen.common.data_utils import StandardScalerTorch
+torch.serialization.add_safe_globals([StandardScalerTorch])
 
 RECOMMENDED_STEP_LR = {'gen': {
                               'full_data':5e-6}
@@ -172,11 +177,13 @@ def main(
     logger.info(f'Using latest checkpoint: {latest_ckpt}')
 
     model = CSPDiffusion.load_from_checkpoint(latest_ckpt, **settings, strict=False)
+    #model = ConstrainedCSPDiffusion.load_from_checkpoint(latest_ckpt, **settings, strict=False)
 
     if torch.cuda.is_available():
         device = torch.device("cuda")
         logger.info(f'CUDA available (Torch {torch.__version__}), setting device to CUDA')
         model.to(device)
+        model.eval()
         if torch.cuda.device_count() > 1:
             model = torch.nn.DataParallel(model, device_ids=[0, 1, 2, 3])
     else:
@@ -220,7 +227,17 @@ def main(
     logger.info(f'Saving results to: {save_path}')
 
     logger.info('Generating crystal list')
+    print('Atom TYPES:',type(atom_types))
+    print(atom_types.shape)
+    print(atom_types[0])
+    print('lattices:', type(lattices))
+    print(lattices.shape)
+    print(lattices[0])
+    print(lattices.min())
+    print(lattices.max())
+    print(lattices.isnan().any())
     crystal_list = get_crystals_list(frac_coords, atom_types, lengths, angles, num_atoms)
+
 
     struct_list = []
     for crys in crystal_list:
@@ -249,9 +266,9 @@ def parse_args():
     parser.add_argument('--dataset', type=str, default='full_data', help='Refernce dataset to define p(N) where N is the number of atoms in the material to be generated.')
     parser.add_argument('--step_lr', type=float, default=5e-6, help='Step LR for SMLD')
     parser.add_argument('--guidance', type=float, default=2.0, help='Guidance strength')
-    parser.add_argument('--num_batches_to_samples', type=str, default=10, help='Num. of batches to sample.')
+    parser.add_argument('--num_batches_to_samples', type=int, default=20, help='Num. of batches to sample.')
     parser.add_argument('--targets', type=float, nargs='+', default=[9.0, 0.7], help='Targets for conditional generation. Need to follow the original order for training E.g., Entropy_cmpt [9.0, 0.7].')    
-    parser.add_argument('--batch_size', type=int, default=100, help='Batch size')
+    parser.add_argument('--batch_size', type=int, default=500, help='Batch size')
     return  parser.parse_args()
 
 if __name__ == '__main__':

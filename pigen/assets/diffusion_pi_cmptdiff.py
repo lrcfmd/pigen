@@ -169,7 +169,6 @@ class CSPDiffusion(BaseModule):
         self.time_embedding  = SinusoidalTimeEmbeddings(self.time_dim)
         self.keep_lattice    = self.hparams.cost_lattice < 1e-5
         self.keep_coords     = self.hparams.cost_coord < 1e-5
-        self._log2           = torch.log(torch.tensor(2.0))
 
     def _calculate_cmpt(self, pred_t: torch.Tensor, pred_l: torch.Tensor, batch_idx: torch.Tensor, c0: float) -> torch.Tensor:
         """
@@ -201,19 +200,15 @@ class CSPDiffusion(BaseModule):
         result = volumes_a / volumes
         return torch.nan_to_num(result, nan=1.0, posinf=1e4, neginf=0.0)
 
-    def log_cosh_loss(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.abs(x) + F.softplus(-2 * torch.abs(x)) - self._log2
-
     def calculate_cmpt(self, type_prob, pred_l, batch_idx):
         radii_table  = a_radii.to(device=type_prob.device, dtype=torch.float32)[:type_prob.shape[1]]
         expected_r3  = (type_prob * radii_table[None, :] ** 3).sum(dim=-1)
-        atomic_vols  = (4.0 / 3.0) * torch.pi * expected_r3
-        cell_volumes = compute_volume(pred_l).clamp(min=1.0).to(torch.float32)  # 1 Å³ floor
+        atomic_vols  = (4.0 / 3.0) * torch.pi * expected_r3                          # float32
+        cell_volumes = compute_volume(pred_l).clamp(min=1e-8).to(torch.float32)
         volumes_a    = torch.zeros(cell_volumes.shape[0], device=type_prob.device, dtype=torch.float32)
         volumes_a.scatter_add_(0, batch_idx, atomic_vols)
         packing_frac = volumes_a / cell_volumes
         return torch.nan_to_num(packing_frac, nan=1.0, posinf=1e4, neginf=0.0)
-
 
     def forward(self, batch: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
@@ -283,26 +278,35 @@ class CSPDiffusion(BaseModule):
         loss_coord = F.mse_loss(pred_x, tar_x)
         loss_type = F.mse_loss(pred_t, rand_t)
 
-        #--- cmpt loss ---
+        # add cmpt to loss
+        denoised_lattice = (input_lattice - c1[:, None, None] * pred_l) / c0[:, None, None].clamp(min=1e-8)
+        c0_atoms = c0.repeat_interleave(batch.num_atoms)[:, None]
+        c1_atoms = c1.repeat_interleave(batch.num_atoms)[:, None]
+        denoised_types = (atom_type_probs - c1_atoms * pred_t) / c0_atoms.clamp(min=1e-8)
+        type_prob = denoised_types.softmax(dim=-1)
 
-        with torch.no_grad():
-            c0_safe          = c0.clamp(min=0.1)
-            c1_safe          = c1
-            denoised_lattice = (input_lattice - c1_safe[:, None, None] * pred_l) \
-                               / c0_safe[:, None, None]
-            c0_atoms         = c0.repeat_interleave(batch.num_atoms)[:, None]
-            c1_atoms         = c1.repeat_interleave(batch.num_atoms)[:, None]
-            denoised_types   = (atom_type_probs - c1_atoms * pred_t) \
-                               / c0_atoms.clamp(min=0.1)
-            type_prob        = denoised_types.softmax(dim=-1)
-            pred_cmpt        = self.calculate_cmpt(type_prob, denoised_lattice, batch.batch)
-        
-        target_cmpt   = batch.target_energy.squeeze(-1).float()
-        pred_cmpt     = torch.nan_to_num(pred_cmpt,   nan=0.0, posinf=1e4, neginf=0.0)
-        target_cmpt   = torch.nan_to_num(target_cmpt, nan=0.0, posinf=1e4, neginf=0.0)
-        cmpt_gate     = alphas_cumprod.detach()
-        loss_cmpt_raw = self.log_cosh_loss(pred_cmpt - target_cmpt)
-        loss_cmpt     = (cmpt_gate * loss_cmpt_raw).mean()
+        pred_cmpt = self.calculate_cmpt(type_prob, denoised_lattice, batch.batch)
+        target_cmpt = batch.target_energy.squeeze(-1).to(dtype=torch.float32)
+
+        pred_cmpt = torch.nan_to_num(pred_cmpt, nan=0.0, posinf=1e5, neginf=-1e5)
+        target_cmpt = torch.nan_to_num(target_cmpt, nan=0.0, posinf=1e5, neginf=-1e5)
+        # sharp gradients
+        #loss_cmpt = F.mse_loss(pred_cmpt, target_cmpt)
+        #loss_cmpt = torch.clamp(loss_cmpt, min=1e-6, max=1e5)
+        #loss_cmpt = weighted_loss_component(loss_cmpt)
+
+        # soft log cosh:
+        #loss_cmpt = torch.log(torch.cosh(pred_cmpt - target_cmpt)).mean()
+
+        def log_cosh_loss(x: torch.Tensor) -> torch.Tensor:
+            # log(cosh(x)) = |x| + log(1 + exp(-2|x|)) - log(2)
+            # never overflows
+            return torch.abs(x) + torch.nn.functional.softplus(-2 * torch.abs(x)) - torch.log(torch.tensor(2.0))
+
+        loss_cmpt = log_cosh_loss(pred_cmpt - target_cmpt).mean()
+
+        # soft sigmoid
+        #loss_cmpt = torch.sigmoid(1 * (pred_cmpt - target_cmpt)**2).mean()
 
         loss = (
         self.hparams.cost_lattice * loss_lattice +

@@ -18,7 +18,7 @@ class DataParams:
     preprocess_workers: int = 4
     lattice_scale_method: str = 'scale_length'
     tolerance: float = 0.1
-    prop: Optional[List[str]] = field(default_factory=lambda: ['CH'])
+    prop: Optional[List[str]] = field(default_factory=lambda: ['target_energy'])
     cat_prop: bool = False
     prop_weights: Optional[List[float]] = field(default_factory=lambda: [1.0])
     use_space_group: bool = False
@@ -33,14 +33,14 @@ class SchedulerParams:
 class TrainerParams:
     accelerator: str = 'gpu'
     devices: int = 4
-    num_nodes: int = 2
+    num_nodes: int = 4
     fast_dev_run: bool = False
     precision: int = 32
     gradient_clip_val: float = 0.5
     gradient_clip_algorithm: str = 'value'
-    max_epochs: int = 1000
+    max_epochs: int = 3000
     num_sanity_val_steps: int = 2
-    accumulate_grad_batches: int = 4,
+    accumulate_grad_batches: int = 4
     deterministic: bool = True
 
 
@@ -73,16 +73,16 @@ class ModelParams:
 @dataclass
 class CheckpointParams:
     ckpt_path: Optional[str] = None
-    monitor: str = 'val_coord_loss',
-    save_top_k: str = 1,
-    verbose: bool = False,
+    monitor: str = 'val_coord_loss'
+    save_top_k: str = 1
+    verbose: bool = False
     mode: str ='min'
 
 @dataclass
 class EarlyStopParams:
-    monitor: str = 'val_loss',
-    patience: int = 120,
-    verbose: bool = False,
+    monitor: str = 'val_loss'
+    patience: int = 1000
+    verbose: bool = False
     mode: str = 'min'
 
 @dataclass
@@ -94,6 +94,7 @@ class AppConfig:
     scheduler: SchedulerParams = field(default_factory=SchedulerParams)
     checkpoint: CheckpointParams = field(default_factory=CheckpointParams)
     earlystop: EarlyStopParams = field(default_factory=EarlyStopParams)
+    optimizer: OptimizerParams = field(default_factory=OptimizerParams)
     data_name: str = 'full_data'
     random_state: int = 1234
     log: bool = True
@@ -102,3 +103,4 @@ class AppConfig:
 
 # Create a singleton-ish config object
 config = AppConfig()
+config.model.optim = config.optimizer

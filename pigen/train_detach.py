@@ -16,7 +16,7 @@ from pytorch_lightning.strategies import DDPStrategy
 
 #from pigen.assets.diffusion_pi import CSPDiffusion
 #from pigen.assets.diffusion_pi_cmptdiff import CSPDiffusion
-from pigen.assets.diffusion_pigate import CSPDiffusion
+from pigen.assets.diffusion_pi import CSPDiffusion
 from pigen.assets.simple_dataset import SimpleCrystDataset
 from pigen.common.utils import combine_and_save_to_yaml, set_logger
 from pigen.settings import config

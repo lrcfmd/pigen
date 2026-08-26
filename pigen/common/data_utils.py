@@ -97,15 +97,15 @@ def build_crystal(crystal_str, niggli=True, primitive=False):
     if niggli:
         crystal = crystal.get_reduced_structure()
 
-    # try:
-    canonical_crystal = Structure(
-        lattice=Lattice.from_parameters(*crystal.lattice.parameters),
-        species=crystal.species,
-        coords=crystal.frac_coords,
-        coords_are_cartesian=False,
-    )
-    # except:
-    #     print('Disordered struct ?!')
+    try:
+        canonical_crystal = Structure(
+            lattice=Lattice.from_parameters(*crystal.lattice.parameters),
+            species=crystal.species,
+            coords=crystal.frac_coords,
+            coords_are_cartesian=False,
+        )
+    except:
+        print('Disordered struct ?!')
 
 
     for site in crystal.sites:

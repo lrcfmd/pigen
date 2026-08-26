@@ -36,6 +36,27 @@ from pigen.eval.eval_utils import lattices_to_params_shape
 
 MAX_ATOMIC_NUM=100
 
+import torch
+from typing import List, Optional
+
+def make_type_mask(allowed_atomic_numbers: List[int], max_atomic_num: int, device) -> torch.Tensor:
+    """
+    Boolean mask of shape [max_atomic_num], True = allowed.
+    Atom types are stored 0-indexed in the logit vector (argmax + 1 = atomic number),
+    so allowed_atomic_numbers=[3, 8] -> indices [2, 7].
+    """
+    mask = torch.zeros(max_atomic_num, dtype=torch.bool, device=device)
+    idx = torch.tensor([z - 1 for z in allowed_atomic_numbers], device=device)
+    mask[idx] = True
+    return mask
+
+
+def apply_type_mask(t: torch.Tensor, allowed_mask: torch.Tensor, neg_value: float = -1e4) -> torch.Tensor:
+    """t: [N_atoms, MAX_ATOMIC_NUM] logits. Sets disallowed channels to a large negative constant."""
+    t = t.clone()
+    t[:, ~allowed_mask] = neg_value
+    return t
+
 def weighted_loss_component(
     loss_cmpt: torch.Tensor,
     base_threshold: float = 1.0,
@@ -150,7 +171,7 @@ class CSPDiffusion(BaseModule):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
+        self._fwd_step = 0
         self.decoder = CSPNet(
             latent_dim=self.hparams.latent_dim + self.hparams.time_dim,
             ln=True,
@@ -171,36 +192,6 @@ class CSPDiffusion(BaseModule):
         self.keep_coords     = self.hparams.cost_coord < 1e-5
         self._log2           = torch.log(torch.tensor(2.0))
 
-    def _calculate_cmpt(self, pred_t: torch.Tensor, pred_l: torch.Tensor, batch_idx: torch.Tensor, c0: float) -> torch.Tensor:
-        """
-        Computes the compactness ratio of atomic volumes to lattice volumes for each sample in a batch.
-
-        Args:
-            pred_t (Tensor): Predicted atom type logits (N_atoms, num_types).
-            pred_l (Tensor): Predicted lattice matrices (batch_size, 3, 3).
-            batch_idx (Tensor): Batch indices mapping each atom to its sample (N_atoms,).
-            c0 (float): Cubic normalization constant, typically the lattice length scale.
-
-        Returns:
-            Tensor: Compactness values for each structure in the batch.
-                    Values are clamped to avoid NaNs and infinities.
-        """
-        batch_size = batch_idx.max().item() + 1
-        decoded = pred_t.argmax(dim=-1)
-        volumes = compute_volume(pred_l) / c0**3
-        volumes_a = torch.zeros(batch_size, device=pred_t.device)
-
-        for i in range(batch_size):
-            idx = (batch_idx == i)
-            radii = a_radii.to(decoded.device)[decoded[idx]]
-            pi_term = (4.0 / 3.0) * torch.pi
-            atomic_vol = pi_term * torch.pow(radii, 3)
-            volumes_a[i] = atomic_vol.sum()
-            volumes[i] = volumes[i] * len(radii) ** 3
-
-        result = volumes_a / volumes
-        return torch.nan_to_num(result, nan=1.0, posinf=1e4, neginf=0.0)
-
     def log_cosh_loss(self, x: torch.Tensor) -> torch.Tensor:
         return torch.abs(x) + F.softplus(-2 * torch.abs(x)) - self._log2
 
@@ -213,7 +204,6 @@ class CSPDiffusion(BaseModule):
         volumes_a.scatter_add_(0, batch_idx, atomic_vols)
         packing_frac = volumes_a / cell_volumes
         return torch.nan_to_num(packing_frac, nan=1.0, posinf=1e4, neginf=0.0)
-
 
     def forward(self, batch: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
@@ -283,32 +273,57 @@ class CSPDiffusion(BaseModule):
         loss_coord = F.mse_loss(pred_x, tar_x)
         loss_type = F.mse_loss(pred_t, rand_t)
 
-        #--- cmpt loss ---
-
+        # ── compactness loss ─────────────────────────────────────────────────────
+        # Lattice: fully detached — no gradient conflict with loss_lattice
         with torch.no_grad():
             c0_safe          = c0.clamp(min=0.1)
             c1_safe          = c1
             denoised_lattice = (input_lattice - c1_safe[:, None, None] * pred_l) \
                                / c0_safe[:, None, None]
-            c0_atoms         = c0.repeat_interleave(batch.num_atoms)[:, None]
-            c1_atoms         = c1.repeat_interleave(batch.num_atoms)[:, None]
-            denoised_types   = (atom_type_probs - c1_atoms * pred_t) \
-                               / c0_atoms.clamp(min=0.1)
-            type_prob        = denoised_types.softmax(dim=-1)
-            pred_cmpt        = self.calculate_cmpt(type_prob, denoised_lattice, batch.batch)
-        
-        target_cmpt   = batch.target_energy.squeeze(-1).float()
-        pred_cmpt     = torch.nan_to_num(pred_cmpt,   nan=0.0, posinf=1e4, neginf=0.0)
-        target_cmpt   = torch.nan_to_num(target_cmpt, nan=0.0, posinf=1e4, neginf=0.0)
+
+        # Types: gradient flows through pred_t, gated by signal-to-noise
+        c0_atoms       = c0.repeat_interleave(batch.num_atoms)[:, None]
+        c1_atoms       = c1.repeat_interleave(batch.num_atoms)[:, None]
+        denoised_types = (atom_type_probs - c1_atoms * pred_t) / c0_atoms.clamp(min=0.1)
+        type_prob      = denoised_types.softmax(dim=-1)
+
+        pred_cmpt   = self.calculate_cmpt(type_prob, denoised_lattice, batch.batch)
+        target_cmpt = batch.target_energy.squeeze(-1).float()
+        pred_cmpt   = torch.nan_to_num(pred_cmpt,   nan=0.0, posinf=1e4, neginf=0.0)
+        target_cmpt = torch.nan_to_num(target_cmpt, nan=0.0, posinf=1e4, neginf=0.0)
+
+        # gate: alphas_cumprod ~ 0 at t=T (noisy, ignore), ~ 1 at t=0 (clean, trust)
         cmpt_gate     = alphas_cumprod.detach()
-        loss_cmpt_raw = self.log_cosh_loss(pred_cmpt - target_cmpt)
+        loss_cmpt_raw = self.log_cosh_loss(pred_cmpt - target_cmpt)   # [batch_size]
         loss_cmpt     = (cmpt_gate * loss_cmpt_raw).mean()
 
+        # ── total loss ───────────────────────────────────────────────────────────
         loss = (
-        self.hparams.cost_lattice * loss_lattice +
-        self.hparams.cost_coord * loss_coord +
-        self.hparams.cost_type * loss_type +
-        self.hparams.cost_cmpt * loss_cmpt)
+            self.hparams.cost_lattice * loss_lattice +
+            self.hparams.cost_coord   * loss_coord   +
+            self.hparams.cost_type    * loss_type    +
+            self.hparams.cost_cmpt    * loss_cmpt
+        )
+        self._fwd_step += 1
+        if self._fwd_step % 100 == 0:  # print every 100 steps
+            with torch.no_grad():
+#               self.logger.experiment.add_scalars('cmpt_debug', {
+#                   'c0_min':          c0.min().item(),
+#                   'c0_max':          c0.max().item(),
+#                   'pred_cmpt_min':   pred_cmpt.min().item(),
+#                   'pred_cmpt_max':   pred_cmpt.max().item(),
+#                   'loss_cmpt':       loss_cmpt.item(),
+#                   'loss_lattice':    loss_lattice.item(),
+#                   'cmpt_gate_max':   (cmpt_gate * loss_cmpt_raw).max().item(),
+#               }, global_step=self._fwd_step)
+               print(
+                   f"[step {self._fwd_step}] "
+                   f"c0=[{c0.min():.3f},{c0.max():.3f}] "
+                   f"pred_cmpt=[{pred_cmpt.min():.3f},{pred_cmpt.max():.3f}] "
+                   f"loss_cmpt={loss_cmpt.item():.4f} "
+                   f"loss_lattice={loss_lattice.item():.4f} "
+                   f"gate_max={((cmpt_gate * loss_cmpt_raw).max().item()):.4f}"
+               )
 
         return {'loss'         : loss,
                 'loss_lattice' : loss_lattice,
@@ -339,7 +354,6 @@ class CSPDiffusion(BaseModule):
         atom_type_probs= (c0.repeat_interleave(atom_types.shape[0])[:, None] * atom_types + c1.repeat_interleave(atom_types.shape[0])[:, None] * rand_t)
         
         return atom_type_probs
-
 
     @torch.no_grad()
     def fill(
@@ -920,3 +934,118 @@ class CSPDiffusion(BaseModule):
         }
 
         return log_dict, loss
+
+
+class ConstrainedCSPDiffusion(CSPDiffusion):
+    @torch.no_grad()
+    def conditional_sample(
+        self,
+        batch,
+        diff_ratio: float = 1.0,
+        step_lr: float = 1e-5,
+        guidance: float = 3.0,
+        targets: List[float] = [4.0, 2.0],
+        allowed_atomic_numbers: Optional[List[int]] = None,
+        mask_neg_value: float = -1e4,
+    ):
+        batch_size = batch.num_graphs
+        conditions = []
+        for c, scaler in zip(targets, self.scaler):
+            c = torch.tensor([[c]] * len(batch), dtype=torch.float32).view(-1, 1).to(self.device)
+            c = scaler.transform(c)
+            conditions.append(c)
+        conditions = torch.hstack(conditions)
+
+        l_T, x_T = torch.randn([batch_size, 3, 3]).to(self.device), torch.rand([batch.num_nodes, 3]).to(self.device)
+        t_T = torch.randn([batch.num_nodes, MAX_ATOMIC_NUM]).to(self.device)
+
+        allowed_mask = None
+        if allowed_atomic_numbers is not None:
+            allowed_mask = make_type_mask(allowed_atomic_numbers, MAX_ATOMIC_NUM, self.device)
+            t_T = apply_type_mask(t_T, allowed_mask, mask_neg_value)
+
+        if self.keep_coords:
+            x_T = batch.frac_coords
+        if self.keep_lattice:
+            l_T = lattice_params_to_matrix_torch(batch.lengths, batch.angles)
+
+        traj = {self.beta_scheduler.timesteps: {
+            'num_atoms': batch.num_atoms,
+            'atom_types': t_T,
+            'frac_coords': x_T % 1.,
+            'lattices': l_T
+        }}
+
+        for t in tqdm(range(self.beta_scheduler.timesteps, 0, -1)):
+            times = torch.full((batch_size,), t, device=self.device)
+            time_emb = self.time_embedding(times)
+
+            alphas = self.beta_scheduler.alphas[t]
+            alphas_cumprod = self.beta_scheduler.alphas_cumprod[t]
+            sigmas = self.beta_scheduler.sigmas[t]
+            sigma_x = self.sigma_scheduler.sigmas[t]
+            sigma_norm = self.sigma_scheduler.sigmas_norm[t]
+
+            c0 = 1.0 / torch.sqrt(alphas)
+            c1 = (1 - alphas) / torch.sqrt(1 - alphas_cumprod)
+
+            x_t = traj[t]['frac_coords']
+            l_t = traj[t]['lattices']
+            t_t = traj[t]['atom_types']
+
+            if self.keep_coords:
+                x_t = x_T
+            if self.keep_lattice:
+                l_t = l_T
+
+            # --- Corrector ---
+            rand_x = torch.randn_like(x_T) if t > 1 else torch.zeros_like(x_T)
+            step_size = step_lr * (sigma_x / self.sigma_scheduler.sigma_begin) ** 2
+            std_x = torch.sqrt(2 * step_size)
+
+            _, pred_x_u, _ = self.decoder(time_emb, t_t, x_t, l_t, batch.num_atoms, batch.batch, condition=None, stage='eval')
+            _, pred_x_c, _ = self.decoder(time_emb, t_t, x_t, l_t, batch.num_atoms, batch.batch, condition=conditions, stage='eval')
+            pred_x = ((1 + guidance) * pred_x_c - guidance * pred_x_u) * torch.sqrt(sigma_norm)
+
+            x_t_minus_05 = x_t - step_size * pred_x + std_x * rand_x if not self.keep_coords else x_t
+            l_t_minus_05 = l_t
+            t_t_minus_05 = t_t  # atom types untouched by corrector in the original code
+
+            # --- Predictor ---
+            rand_l = torch.randn_like(l_T) if t > 1 else torch.zeros_like(l_T)
+            rand_t = torch.randn_like(t_T) if t > 1 else torch.zeros_like(t_T)
+            rand_x = torch.randn_like(x_T) if t > 1 else torch.zeros_like(x_T)
+
+            adjacent_sigma_x = self.sigma_scheduler.sigmas[t - 1]
+            step_size = (sigma_x ** 2 - adjacent_sigma_x ** 2)
+            std_x = torch.sqrt((adjacent_sigma_x ** 2 * step_size) / (sigma_x ** 2))
+
+            pred_l_u, pred_x_u, pred_t_u = self.decoder(time_emb, t_t_minus_05, x_t_minus_05, l_t_minus_05, batch.num_atoms, batch.batch, condition=None, stage='eval')
+            pred_l_c, pred_x_c, pred_t_c = self.decoder(time_emb, t_t_minus_05, x_t_minus_05, l_t_minus_05, batch.num_atoms, batch.batch, condition=conditions, stage='eval')
+
+            pred_l = (1 + guidance) * pred_l_c - guidance * pred_l_u
+            pred_t = (1 + guidance) * pred_t_c - guidance * pred_t_u
+            pred_x = ((1 + guidance) * pred_x_c - guidance * pred_x_u) * torch.sqrt(sigma_norm)
+
+            x_t_minus_1 = x_t_minus_05 - step_size * pred_x + std_x * rand_x if not self.keep_coords else x_t
+            l_t_minus_1 = c0 * (l_t_minus_05 - c1 * pred_l) + sigmas * rand_l if not self.keep_lattice else l_t
+            t_t_minus_1 = c0 * (t_t_minus_05 - c1 * pred_t) + sigmas * rand_t
+
+            # *** enforce the element constraint every step ***
+            if allowed_mask is not None:
+                t_t_minus_1 = apply_type_mask(t_t_minus_1, allowed_mask, mask_neg_value)
+
+            traj[t - 1] = {
+                'num_atoms': batch.num_atoms,
+                'atom_types': t_t_minus_1,
+                'frac_coords': x_t_minus_1 % 1.,
+                'lattices': l_t_minus_1
+            }
+
+        traj_stack = {
+            'num_atoms': batch.num_atoms,
+            'atom_types': torch.stack([traj[i]['atom_types'] for i in range(self.beta_scheduler.timesteps, -1, -1)]).argmax(dim=-1) + 1,
+            'all_frac_coords': torch.stack([traj[i]['frac_coords'] for i in range(self.beta_scheduler.timesteps, -1, -1)]),
+            'all_lattices': torch.stack([traj[i]['lattices'] for i in range(self.beta_scheduler.timesteps, -1, -1)])
+        }
+        return traj[0], traj_stack

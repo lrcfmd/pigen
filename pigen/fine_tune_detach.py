@@ -9,6 +9,7 @@ import torch
 import torch.distributed as dist
 from torch_geometric.loader import DataLoader as GDataLoader
 import pandas as pd
+import pickle
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
@@ -16,7 +17,7 @@ from pytorch_lightning.strategies import DDPStrategy
 
 #from pigen.assets.diffusion_pi import CSPDiffusion
 #from pigen.assets.diffusion_pi_cmptdiff import CSPDiffusion
-from pigen.assets.diffusion_pigate import CSPDiffusion
+from pigen.assets.diffusion_pi import CSPDiffusion
 from pigen.assets.simple_dataset import SimpleCrystDataset
 from pigen.common.utils import combine_and_save_to_yaml, set_logger
 from pigen.settings import config
@@ -47,30 +48,43 @@ def main():
     logger = set_logger(log_dir, 'training', 'INFO')
 
     callbacks = [ModelCheckpoint(dirpath=log_dir),
-                EarlyStopping(**asdict(config.earlystop))]
+                #EarlyStopping(**asdict(config.earlystop))]
                 # for restart from ckpt and resetting patience:
-                #EarlyStopping(monitor='val_loss', patience=500, mode='min')]
+                EarlyStopping(monitor='val_loss', patience=500, mode='min')]
                 # for starting fresh:
+                #EarlyStopping(**asdict(config.earlystop))]
 
     metric_logger = CSVLogger(log_dir, name=f'{config.experiment}')
 
     seed_everything(config.random_state)
 
-    pl_trainer_params = asdict(config.trainer)
-
-    from lightning_fabric.plugins.io import TorchCheckpointIO
-    class LegacyCheckpointIO(TorchCheckpointIO):
-        def load_checkpoint(self, path, map_location=None, weights_only=False):
-            return super().load_checkpoint(path, map_location=map_location, weights_only=False)
-
-    trainer = Trainer(
-            default_root_dir='.',
-            strategy=DDPStrategy(find_unused_parameters=True),
-            logger=metric_logger,
-            callbacks=callbacks,
-            plugins=[LegacyCheckpointIO()],
-            **pl_trainer_params
-            )
+    # ========= FINE-TUNING CONFIG ===========
+    # --- Trainer ---
+    config.trainer.max_epochs             = 3000   # ckpt was at epoch=999, so 2000 effective epochs
+    config.trainer.accumulate_grad_batches = 2     # 4→2: more steps per epoch (15→28)
+    
+    # --- Optimizer ---
+    config.optimizer.lr          = 1e-4   # 0.1× original 1e-3
+    config.optimizer.min_lr      = 1e-6   # floor scaled down accordingly
+    config.optimizer.lr_patience = 50     # more patient on small/noisy data
+    config.optimizer.lr_factor   = 0.5    # slightly sharper reduction
+    
+    # --- Early stopping ---
+    config.earlystop.monitor  = 'val_loss'
+    config.earlystop.patience = 150       # 150 epochs no improvement → stop
+    config.earlystop.mode     = 'min'
+    config.earlystop.verbose  = True
+    
+    # --- Checkpoint ---
+    config.checkpoint.save_top_k = 3     # keep top 3, not just 1
+    config.checkpoint.monitor    = 'val_coord_loss'
+    config.checkpoint.mode       = 'min'
+    
+    # --- Data ---
+    config.data.batch_size = 16          # optional: more steps/epoch if GPU mem allows
+    
+    # sync model optim reference (already done in settings.py but be safe)
+    config.model.optim = config.optimizer
 
     logger.info(f'Trainer initialized with params: \n{config.trainer}')
     # Save all config groups to YAML
@@ -85,7 +99,7 @@ def main():
 
     train_df = pd.read_csv(f'{config.PATHS.DATA_DIR}/{config.data_name}/train.csv')
     val_df   = pd.read_csv(f'{config.PATHS.DATA_DIR}/{config.data_name}/val.csv')
-    test_df  = pd.read_csv(f'{config.PATHS.DATA_DIR}/{config.data_name}/test.csv')
+#    test_df  = pd.read_csv(f'{config.PATHS.DATA_DIR}/{config.data_name}/test.csv')
 
 
     logger.info(f'Data is read from {config.PATHS.DATA_DIR}')
@@ -105,15 +119,28 @@ def main():
                                         gpus=config.gpus,
                                         **asdict(config.data))
 
-    test_dataset  = SimpleCrystDataset(df=test_df,
-                                        save_path=f'{config.PATHS.DATA_DIR}/{config.data_name}/test_ori_{prop}.pt',
-                                        target_energy=True,
-                                        gpus=config.gpus,
-                                        **asdict(config.data))
+#    test_dataset  = SimpleCrystDataset(df=test_df,
+#                                        save_path=f'{config.PATHS.DATA_DIR}/{config.data_name}/test_ori_{prop}.pt',
+#                                        target_energy=True,
+#                                        gpus=config.gpus,
+#                                        **asdict(config.data))
+
+    #=============== Fine tuning ===================
+    # Load saved scalers
+    #with open('./data/Pearson/scaler_bravais_idx_natoms.pkl', 'rb') as f:
+    #    old_scaler = pickle.load(f)
+    with open('./data/Pearson/lattice_scaler.pkl', 'rb') as f:
+        old_lattice_scaler = pickle.load(f)
+
+    train_dataset.scaler = train_dataset.scaler.copy() 
+    val_dataset.scaler   = val_dataset.scaler.copy()
+    train_dataset.lattice_scaler = old_lattice_scaler
+    val_dataset.lattice_scaler   = old_lattice_scaler
+    #=============== Fine tuning ===================
 
     train_loader = GDataLoader(train_dataset, num_workers=config.data.preprocess_workers,  batch_size=config.data.batch_size, shuffle=False, drop_last=True, pin_memory=False)
     val_loader   = GDataLoader(val_dataset,   num_workers=config.data.preprocess_workers,  batch_size=config.data.batch_size, shuffle=False)
-    test_loader  = GDataLoader(test_dataset,  num_workers=config.data.preprocess_workers,  batch_size=config.data.batch_size, shuffle=False)
+#    test_loader  = GDataLoader(test_dataset,  num_workers=config.data.preprocess_workers,  batch_size=config.data.batch_size, shuffle=False)
 
     logger.info(f"DataLoaders are set with batch_size: {config.data.batch_size}")
 
@@ -126,20 +153,52 @@ def main():
     model = CSPDiffusion(**asdict(config.model), **asdict(config.data), **asdict(config.scheduler))
     logger.info(f'Model diffusion initialized with parameters: {config.model}')
 
+    #=============== Fine tuning ===================
+    # Load checkpoint manually, pop mismatched keys
+    ckpt = torch.load(config.checkpoint.ckpt_path, map_location='cpu', weights_only=False)
+    state_dict = ckpt['state_dict']
+
+    # Remove property-specific layers you want to re-initialise
+    keys_to_drop = [k for k in state_dict if 'cond_emb' in k]
+    print("Dropping:", keys_to_drop)
+    for k in keys_to_drop:
+        del state_dict[k]
+    model.load_state_dict(state_dict, strict=False)
+
+    #=============== Fine tuning ===================
+
     #Passing scalers to model
     model.scaler = train_dataset.scaler.copy()
-    model.lattice_scaler = train_dataset.lattice_scaler.copy()
+    model.lattice_scaler = old_lattice_scaler
+
+    pl_trainer_params = asdict(config.trainer)
+                                                                                                
+    from lightning_fabric.plugins.io import TorchCheckpointIO
+    class LegacyCheckpointIO(TorchCheckpointIO):
+        def load_checkpoint(self, path, map_location=None, weights_only=False):
+            return super().load_checkpoint(path, map_location=map_location, weights_only=False)
+                                                                                                
+    trainer = Trainer(
+            default_root_dir='.',
+            strategy=DDPStrategy(find_unused_parameters=True),
+            logger=metric_logger,
+            callbacks=callbacks,
+            plugins=[LegacyCheckpointIO()],
+            **pl_trainer_params
+            )
 
     logger.info(f'Fitting the model with scheduler: {config.scheduler}')
-    trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader, ckpt_path=config.checkpoint.ckpt_path)
+
+    print(f"max_epochs in trainer: {trainer.max_epochs}")
+    print(f"pl_trainer_params keys: {pl_trainer_params}")
+    trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader, ckpt_path=None)
     if dist.is_initialized():
         dist.destroy_process_group()
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Run Conditional PIGEN model Training')
     parser.add_argument('--data_name', type=str, default='Alex_MP_20_M_LED',  help='Name of the dataset')
-    parser.add_argument('--prop', type=str, nargs='+', default=['entropy_sum', 'target_energy'], help='Conditioning properties')
+    parser.add_argument('--prop', type=str, nargs='+', default=['fom_nso'], help='Conditioning properties')
     parser.add_argument('--p_cond', type=float, default=0.4, help='Probability of conditioning for CFG')
     parser.add_argument('--ckpt_path', type=str, default=None, help='Path to the checkpoint to load')
     parser.add_argument('--log', action='store_true', default=False, help='Enable metric logging')
