@@ -1,0 +1,233 @@
+[rank: 2] Seed set to 42
+[rank: 3] Seed set to 42
+[rank: 0] Seed set to 42
+[rank: 1] Seed set to 42
+  0%|          | 0/6515 [00:00<?, ?it/s]/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/io/cif.py:1342: UserWarning: Missing elements Zn, Ca, K from PMG structure composition
+  if struct := self._get_structure(data, primitive, symmetrized, check_occu=check_occu):
+/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/core/structure.py:3117: UserWarning: Issues encountered while parsing CIF: 4 fractional coordinates rounded to ideal values to avoid issues with finite precision.
+  struct = parser.parse_structures(primitive=primitive)[0]
+  0%|          | 2/6515 [00:00<01:44, 62.15it/s]
+  0%|          | 0/6515 [00:00<?, ?it/s]/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/io/cif.py:1342: UserWarning: Missing elements Ca, Zn, K from PMG structure composition
+  if struct := self._get_structure(data, primitive, symmetrized, check_occu=check_occu):
+/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/core/structure.py:3117: UserWarning: Issues encountered while parsing CIF: 4 fractional coordinates rounded to ideal values to avoid issues with finite precision.
+  struct = parser.parse_structures(primitive=primitive)[0]
+multiprocess.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/multiprocess/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pathos/helpers/mp_helper.py", line 15, in <lambda>
+    func = lambda args: f(*args)
+                        ^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 1170, in process_one_simple
+    crystal = build_crystal(crystal_str, niggli=niggli, primitive=primitive)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 117, in build_crystal
+    return canonical_crystal
+           ^^^^^^^^^^^^^^^^^
+UnboundLocalError: cannot access local variable 'canonical_crystal' where it is not associated with a value
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/fine_tune_detach.py", line 213, in <module>
+    main()
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/fine_tune_detach.py", line 110, in main
+    train_dataset = SimpleCrystDataset(df=train_df,
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/assets/simple_dataset.py", line 51, in __init__
+  0%|          | 2/6515 [00:00<01:31, 71.54it/s]
+multiprocess.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/multiprocess/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pathos/helpers/mp_helper.py", line 15, in <lambda>
+    func = lambda args: f(*args)
+                        ^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 1170, in process_one_simple
+    crystal = build_crystal(crystal_str, niggli=niggli, primitive=primitive)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 117, in build_crystal
+    return canonical_crystal
+           ^^^^^^^^^^^^^^^^^
+UnboundLocalError: cannot access local variable 'canonical_crystal' where it is not associated with a value
+"""
+
+    self.preprocess(save_path, preprocess_workers, prop)
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/assets/simple_dataset.py", line 63, in preprocess
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/fine_tune_detach.py", line 213, in <module>
+    main()
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/fine_tune_detach.py", line 110, in main
+    cached_data = preprocess_simple(
+                  ^^^^^^^^^^^^^^^^^^
+  0%|          | 0/6515 [00:00<?, ?it/s]/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/io/cif.py:1342: UserWarning: Missing elements Ca, Zn, K from PMG structure composition
+  if struct := self._get_structure(data, primitive, symmetrized, check_occu=check_occu):
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 1205, in preprocess_simple
+/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/core/structure.py:3117: UserWarning: Issues encountered while parsing CIF: 4 fractional coordinates rounded to ideal values to avoid issues with finite precision.
+  struct = parser.parse_structures(primitive=primitive)[0]
+    train_dataset = SimpleCrystDataset(df=train_df,
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/assets/simple_dataset.py", line 51, in __init__
+    unordered_results = p_umap(
+                        ^^^^^^^
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/p_tqdm/p_tqdm.py", line 85, in p_umap
+    self.preprocess(save_path, preprocess_workers, prop)
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/assets/simple_dataset.py", line 63, in preprocess
+  0%|          | 2/6515 [00:00<01:23, 77.67it/s]
+    cached_data = preprocess_simple(
+    result = list(generator)
+             ^^^^^^^^^^^^^^^
+multiprocess.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/multiprocess/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pathos/helpers/mp_helper.py", line 15, in <lambda>
+    func = lambda args: f(*args)
+                        ^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 1170, in process_one_simple
+    crystal = build_crystal(crystal_str, niggli=niggli, primitive=primitive)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 117, in build_crystal
+    return canonical_crystal
+           ^^^^^^^^^^^^^^^^^
+UnboundLocalError: cannot access local variable 'canonical_crystal' where it is not associated with a value
+                  ^^^^^^^^^^^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 1205, in preprocess_simple
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/p_tqdm/p_tqdm.py", line 55, in _parallel
+"""
+
+The above exception was the direct cause of the following exception:
+    unordered_results = p_umap(
+
+                        ^^^^^^^
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/p_tqdm/p_tqdm.py", line 85, in p_umap
+    for item in tqdm_func(map_func(function, *iterables), total=length, **kwargs):
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/tqdm/std.py", line 1181, in __iter__
+Traceback (most recent call last):
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/fine_tune_detach.py", line 213, in <module>
+    result = list(generator)
+             ^^^^^^^^^^^^^^^
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/p_tqdm/p_tqdm.py", line 55, in _parallel
+    for obj in iterable:
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/multiprocess/pool.py", line 873, in next
+    main()
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/fine_tune_detach.py", line 110, in main
+    for item in tqdm_func(map_func(function, *iterables), total=length, **kwargs):
+    raise value
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/tqdm/std.py", line 1181, in __iter__
+    train_dataset = SimpleCrystDataset(df=train_df,
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/assets/simple_dataset.py", line 51, in __init__
+UnboundLocalError: cannot access local variable 'canonical_crystal' where it is not associated with a value
+    for obj in iterable:
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/multiprocess/pool.py", line 873, in next
+    self.preprocess(save_path, preprocess_workers, prop)
+/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/core/structure.py:3117: UserWarning: Issues encountered while parsing CIF: 2 fractional coordinates rounded to ideal values to avoid issues with finite precision.
+  struct = parser.parse_structures(primitive=primitive)[0]
+/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/core/structure.py:3117: UserWarning: Issues encountered while parsing CIF: 4 fractional coordinates rounded to ideal values to avoid issues with finite precision.
+  struct = parser.parse_structures(primitive=primitive)[0]
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/assets/simple_dataset.py", line 63, in preprocess
+    raise value
+UnboundLocalError: cannot access local variable 'canonical_crystal' where it is not associated with a value
+    cached_data = preprocess_simple(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 1205, in preprocess_simple
+    unordered_results = p_umap(
+                        ^^^^^^^
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/p_tqdm/p_tqdm.py", line 85, in p_umap
+    result = list(generator)
+             ^^^^^^^^^^^^^^^
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/p_tqdm/p_tqdm.py", line 55, in _parallel
+    for item in tqdm_func(map_func(function, *iterables), total=length, **kwargs):
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/tqdm/std.py", line 1181, in __iter__
+    for obj in iterable:
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/multiprocess/pool.py", line 873, in next
+    raise value
+UnboundLocalError: cannot access local variable 'canonical_crystal' where it is not associated with a value
+/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/core/structure.py:3117: UserWarning: Issues encountered while parsing CIF: 2 fractional coordinates rounded to ideal values to avoid issues with finite precision.
+  struct = parser.parse_structures(primitive=primitive)[0]
+/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/core/structure.py:3117: UserWarning: Issues encountered while parsing CIF: 4 fractional coordinates rounded to ideal values to avoid issues with finite precision.
+  struct = parser.parse_structures(primitive=primitive)[0]
+/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/core/structure.py:3117: UserWarning: Issues encountered while parsing CIF: 5 fractional coordinates rounded to ideal values to avoid issues with finite precision.
+  struct = parser.parse_structures(primitive=primitive)[0]
+  0%|          | 0/6515 [00:00<?, ?it/s]/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/io/cif.py:1342: UserWarning: Missing elements K, Zn, Ca from PMG structure composition
+  if struct := self._get_structure(data, primitive, symmetrized, check_occu=check_occu):
+/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pymatgen/core/structure.py:3117: UserWarning: Issues encountered while parsing CIF: 4 fractional coordinates rounded to ideal values to avoid issues with finite precision.
+  struct = parser.parse_structures(primitive=primitive)[0]
+  0%|          | 2/6515 [00:00<01:22, 79.24it/s]
+multiprocess.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/multiprocess/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/pathos/helpers/mp_helper.py", line 15, in <lambda>
+    func = lambda args: f(*args)
+                        ^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 1170, in process_one_simple
+    crystal = build_crystal(crystal_str, niggli=niggli, primitive=primitive)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 117, in build_crystal
+    return canonical_crystal
+           ^^^^^^^^^^^^^^^^^
+UnboundLocalError: cannot access local variable 'canonical_crystal' where it is not associated with a value
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/fine_tune_detach.py", line 213, in <module>
+    main()
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/fine_tune_detach.py", line 110, in main
+    train_dataset = SimpleCrystDataset(df=train_df,
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/assets/simple_dataset.py", line 51, in __init__
+    self.preprocess(save_path, preprocess_workers, prop)
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/assets/simple_dataset.py", line 63, in preprocess
+    cached_data = preprocess_simple(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/lus/lfs1aip2/projects/u6fo/pigen/pigen/common/data_utils.py", line 1205, in preprocess_simple
+    unordered_results = p_umap(
+                        ^^^^^^^
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/p_tqdm/p_tqdm.py", line 85, in p_umap
+    result = list(generator)
+             ^^^^^^^^^^^^^^^
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/p_tqdm/p_tqdm.py", line 55, in _parallel
+    for item in tqdm_func(map_func(function, *iterables), total=length, **kwargs):
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/tqdm/std.py", line 1181, in __iter__
+    for obj in iterable:
+  File "/home/u6fo/andrij.u6fo/miniforge3/envs/pigen/lib/python3.11/site-packages/multiprocess/pool.py", line 873, in next
+    raise value
+UnboundLocalError: cannot access local variable 'canonical_crystal' where it is not associated with a value
+[rank: 7] Seed set to 42
+[rank: 6] Seed set to 42
+[rank: 5] Seed set to 42
+[rank: 4] Seed set to 42
+srun: error: nid010694: tasks 0,3: Exited with exit code 1
+srun: Terminating StepId=6141371.0
+[rank: 9] Seed set to 42
+[rank: 11] Seed set to 42
+[rank: 10] Seed set to 42
+[rank: 8] Seed set to 42
+[rank: 13] Seed set to 42
+[rank: 14] Seed set to 42
+[rank: 15] Seed set to 42
+[rank: 12] Seed set to 42
+slurmstepd: error: *** STEP 6141371.0 ON nid010694 CANCELLED AT 2026-08-26T14:16:02 ***
+srun: error: nid010694: tasks 1-2: Exited with exit code 1
+srun: error: nid010699: task 12: Terminated
+srun: error: nid010698: task 8: Terminated
+srun: error: nid010697: task 4: Terminated
+srun: error: nid010699: tasks 13-15: Terminated
+srun: error: nid010697: tasks 5-7: Terminated
+srun: error: nid010698: tasks 9-11: Terminated
+srun: Force Terminated StepId=6141371.0
