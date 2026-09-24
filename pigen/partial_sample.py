@@ -141,7 +141,7 @@ def main(model_path,
 
     if save_path is None:
         save_path = model_path
-    logger.info(f'Saving results to save_path: {save_path}'
+    logger.info(f'Saving results to save_path: {save_path}')
 
     crystal_list   = get_crystals_list(frac_coords, atom_types, lengths, angles, num_atoms)
 

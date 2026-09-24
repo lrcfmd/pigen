@@ -26,7 +26,7 @@ from pymatgen.core import Structure
 
 
 # Constants
-DEFAULT_SPP_FILE = 'SPP_collected.json'
+DEFAULT_SPP_FILE = '/lus/lfs1aip2/projects/u6fo/pigen/metrics/SPP_collected.json'
 DEFAULT_SPP_THRESHOLD = 0.362  # Standard threshold from literature
 STRUCTURE_COLUMN_NAMES = ['structure', 'cif']  # Possible column names
 
@@ -96,6 +96,14 @@ def get_spp_error(distance: float, spp_dict: Dict[str, float]) -> float:
         bin_value = get_bin_value(distance, bin_edges)
         return spp_dict[str(bin_value)]
 
+
+def legacy_valid(cif_string: str) -> int:
+    try:
+        atoms = parse_cif_string(cif_string)
+        distances = atoms.get_all_distances(mic=True)
+        return int(distances[distances!=0].min() > 0.5)
+    except:
+        return 0
 
 def calculate_spp_score(cif_string: str, spp_data: Dict[str, Dict[str, float]]) -> float:
     """
@@ -245,6 +253,7 @@ def process_structures(
     # Calculate SPP scores
     print(f"Calculating SPP scores for {len(df_result)} structures...")
     spp_scores = []
+    legacy_scores = []
     
     for idx, cif_string in enumerate(df_result[structure_col]):
         if idx % 100 == 0 and idx > 0:
@@ -256,13 +265,23 @@ def process_structures(
         except Exception as e:
             warnings.warn(f"Failed at index {idx}: {e}")
             spp_scores.append(np.nan)
+
+        legacy = legacy_valid(cif_string)
+        legacy_scores.append(legacy)
     
     df_result['spp_error'] = spp_scores
-    
+    df_result['legacy_valid'] = legacy_scores
+
+
     # Drop structures with missing scores
     initial_count = len(df_result)
     df_result = df_result.dropna(subset=['spp_error'])
     dropped_na = initial_count - len(df_result)
+    
+    # Legacy Valid:
+    legacy_ok = (np.array(legacy_scores)> 0.5).sum()
+
+    print('Legacy Valid d_{ij}>0.5Å:', legacy_ok , '/', initial_count)
     
     if dropped_na > 0:
         print(f"Dropped {dropped_na} structures with missing SPP scores")
@@ -350,7 +369,7 @@ def main():
     parser.add_argument(
         '--structure-column',
         type=str,
-        default=None,
+        default='cif',
         help='Name of column containing CIF strings (auto-detect if not specified)'
     )
     parser.add_argument(

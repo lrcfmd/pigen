@@ -8,7 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 class Paths:
     PROJECT_ROOT: Path = PROJECT_ROOT
     DATA_DIR: Path = field(default_factory=lambda: PROJECT_ROOT / 'data')
-    LOG_DIR: Path = field(default_factory=lambda: PROJECT_ROOT / 'log')
+    LOG_DIR: Path = field(default_factory=lambda: PROJECT_ROOT / 'outputs' / 'logs')
     CHECKPOINT_DIR: Path = field(default_factory=lambda: PROJECT_ROOT / 'checkpoints')
 
 @dataclass
@@ -24,6 +24,7 @@ class DataParams:
     use_space_group: bool = False
     use_pos_index: bool = False
     batch_size: int = 24
+    cmpt_target: str = 'target_energy'  # CSV column holding the compactness target
 
 @dataclass
 class SchedulerParams:
@@ -65,6 +66,8 @@ class ModelParams:
     time_dim: int = 256
     cost_type: float = 20.0
     cost_cmpt: float = 1.0
+    cmpt_mode: str = 'types'   # compactness loss: none | types | full | draft (README: Compactness-loss flags)
+    cmpt_tau: float = 0.1      # softmax temperature for the denoised atom-type estimate
     max_neighbors: int = 20
     radius: float = 7.0
     timesteps: int = 1000

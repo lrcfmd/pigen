@@ -14,9 +14,7 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
 from pytorch_lightning.strategies import DDPStrategy
 
-#from pigen.assets.diffusion_pi import CSPDiffusion
-#from pigen.assets.diffusion_pi_cmptdiff import CSPDiffusion
-from pigen.assets.diffusion_pigate import CSPDiffusion
+from pigen.assets.diffusion_pi import CSPDiffusion, CMPT_MODES
 from pigen.assets.simple_dataset import SimpleCrystDataset
 from pigen.common.utils import combine_and_save_to_yaml, set_logger
 from pigen.settings import config
@@ -37,6 +35,14 @@ def update_config_with_args(args):
         config.log = args.log
     if args.p_cond:
         config.model.p_cond = args.p_cond
+    if args.cmpt_mode is not None:
+        config.model.cmpt_mode = args.cmpt_mode
+    if args.cmpt_tau is not None:
+        config.model.cmpt_tau = args.cmpt_tau
+    if args.cost_cmpt is not None:
+        config.model.cost_cmpt = args.cost_cmpt
+    if args.cmpt_target is not None:
+        config.data.cmpt_target = args.cmpt_target
     config.experiment = args.experiment
 
 def main():
@@ -92,6 +98,8 @@ def main():
     logger.debug(f'data_params config: {config.data}')
 
     prop = '_'.join(config.data.prop)
+    if config.data.cmpt_target != 'target_energy':
+        prop += f'_{config.data.cmpt_target}'  # separate cache per compactness target
 
     train_dataset = SimpleCrystDataset(df=train_df,
                                         save_path=f'{config.PATHS.DATA_DIR}/{config.data_name}/train_ori_{prop}.pt',
@@ -146,6 +154,10 @@ def parse_args():
     parser.add_argument('--gpus', type=int, default=1,  help='Number of gpus')
     parser.add_argument('--random_state', type=int, default=42,  help='Random state for reproducibility')
     parser.add_argument('--experiment', type=str, default='dummy',  help='Folder to place the ckpt')
+    parser.add_argument('--cmpt_mode', type=str, choices=CMPT_MODES, default=None, help='Compactness loss mode (default: settings.py, "types")')
+    parser.add_argument('--cmpt_tau', type=float, default=None, help='Softmax temperature of the atom-type estimate in the compactness loss')
+    parser.add_argument('--cost_cmpt', type=float, default=None, help='Weight of the compactness loss')
+    parser.add_argument('--cmpt_target', type=str, default=None, help='CSV column with the compactness target (default: target_energy)')
     return parser.parse_args()
 
 if __name__ == '__main__':

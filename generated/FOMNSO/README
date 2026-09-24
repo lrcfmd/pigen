@@ -1,0 +1,62 @@
+Legacy Valid d_{ij}>0.5Å: 9829 / 10000
+Dropped 205 structures with missing SPP scores
+
+SPP score statistics (n=9795):
+  Mean:   -0.1561
+  Median: -0.3045
+  Std:    5.2583
+  Min:    -2.0433
+  Max:    336.6513
+
+Structures with SPP ≤ 0.362: 9182/9795 (93.7%)
+
+Filtering results:
+  Retained: 9182 structures
+  Removed:  613 structures (6.3%)
+
+===================== FOM 0.1
+
+Legacy Valid d_{ij}>0.5Å: 9843 / 10000
+Dropped 137 structures with missing SPP scores
+
+SPP score statistics (n=9863):
+  Mean:   0.2710
+  Median: -0.2510
+  Std:    47.6682
+  Min:    -2.0433
+  Max:    4720.8807
+
+Structures with SPP ≤ 0.362: 9273/9863 (94.0%)
+
+Filtering results:
+  Retained: 9273 structures
+  Removed:  590 structures (6.0%)
+Compactness
+Filtering with range [0.55, 0.85]:
+  Retained: 4484 structures
+  Removed:  4789 structures (51.6%)
+
+
+===================== FOM 0.15
+Legacy Valid d_{ij}>0.5Å: 9833 / 10000
+Dropped 168 structures with missing SPP scores
+
+SPP score statistics (n=9832):
+  Mean:   2.1047
+  Median: -0.2835
+  Std:    135.7136
+  Min:    -2.0433
+  Max:    11239.8861
+
+Structures with SPP ≤ 0.362: 9245/9832 (94.0%)
+
+Filtering results:
+  Retained: 9245 structures
+  Removed:  587 structures (6.0%)
+
+Compactness
+Filtering with range [0.55, 0.85]:
+  Retained: 4282 structures
+  Removed:  4963 structures (53.7%)
+
+===================== FOM 0.2

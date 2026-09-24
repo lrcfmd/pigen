@@ -29,6 +29,7 @@ class SimpleCrystDataset(Dataset):
                  use_space_group= False, 
                  use_pos_index= False,
                  target_energy=False,
+                 cmpt_target='target_energy',
                  gpus=1,
                  **kwargs):
         
@@ -36,6 +37,7 @@ class SimpleCrystDataset(Dataset):
         self.df = df
         self.prop = prop
         self.target_energy = target_energy
+        self.cmpt_target = cmpt_target
 
         if self.prop != ['']:
             self.df = self.df.dropna(subset=prop).reset_index(drop=True)
@@ -68,7 +70,8 @@ class SimpleCrystDataset(Dataset):
             prop_list=prop, # list of properties to be scaled
             use_space_group=self.use_space_group,
             tol=self.tolerance,
-            target_energy=self.target_energy)
+            target_energy=self.target_energy,
+            target_column=self.cmpt_target)
             if self.gpu==1:
                 torch.save(cached_data, save_path)
             self.cached_data = cached_data

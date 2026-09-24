@@ -28,7 +28,21 @@ python pigen/train.py
 This will use the default data and conditioning properties and is equivalent to
 
 ```bash
-python pigen/train.py --data_name Alex_MP_20_M_LED --prop ['entropy_sum', 'target_energy']
+python pigen/train.py --data_name Alex_MP_20_M_LED --prop entropy_sum target_energy
+```
+
+Compactness-loss flags (`train.py` and `fine_tune.py`):
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--cmpt_mode {none,types,full,draft}` | `types` | `none`: loss only logged, no gradient · `types`: gradient through atom types · `full`: through atom types and lattice · `draft`: legacy draft loss (no gradient) |
+| `--cmpt_tau FLOAT` | `0.1` | softmax temperature of the atom-type estimate |
+| `--cost_cmpt FLOAT` | `1.0` | weight of the compactness loss |
+| `--cmpt_target COLUMN` | `target_energy` | CSV column with the compactness target |
+
+```bash
+python pigen/fine_tune.py --cmpt_mode none --cmpt_target compactness_av \
+       --data_name BVSE_PSI --prop psi_nso_300K --ckpt_path <pretrained.ckpt>
 ```
 
 ### Model Inference
@@ -79,34 +93,61 @@ docker run --rm pigen
 docker run --rm --gpus all pigen
 ```
 ### Project structure
+Code is tracked in git; `data/`, `generated/`, `outputs/` and `analysis/` hold data and results and are
+git-ignored (each has its own README).
 ```text
-├── checkpoints
-├── data
-│   └── Alex_MP_20_M_LED/
+├── analysis                    # results of metric/analysis runs (git-ignored)
+│   ├── VAL/
+│   └── examples/
+├── checkpoints                 # pretrained checkpoint + settings.yaml
+├── data                        # input datasets (git-ignored)
+│   ├── Alex_MP_20_M_LED/
+│   ├── BVSE/
+│   └── BVSE_PSI/
 ├── environment.yml
-├── log
+├── generated                   # generated structures (git-ignored)
+│   ├── FOMNSO/
+│   ├── PCD/
+│   └── PDDMIN/
+├── metrics                     # evaluation metrics
+│   ├── compute_chgnet_energy.py
+│   ├── compute_compactness.py
+│   ├── compute_mled.py
+│   ├── new_compositions.py
+│   ├── spp_error.py
+│   ├── SPP_collected.json
+│   ├── PDD_EXTENSION/
+│   └── VAL/
+├── outputs                     # run artefacts (git-ignored)
+│   ├── logs/                   # training runs (settings.LOG_DIR)
+│   └── slurm/                  # SLURM stdout/stderr
 ├── pigen
-│   ├── __init__.py
-│   ├── assets/
-│   ├── common/
-│   ├── eval/
-│   ├── generate.py
-│   ├── normalization
-│   ├── partial_sample.py
-│   ├── settings.py
-│   └── train.py
+│   ├── __init__.py
+│   ├── assets/                 # cspnet.py, diffusion_pi.py (model, --cmpt_mode), simple_dataset.py
+│   ├── common/
+│   ├── eval/
+│   ├── fine_tune.py
+│   ├── generate.py
+│   ├── normalization
+│   ├── partial_sample.py
+│   ├── settings.py
+│   └── train.py
 ├── README.md
+├── scripts
+│   ├── data_prep/              # dataset construction (splits, BVSE transforms, lattice scaler)
+│   ├── env/                    # environment setup, verify_environment_installs.py
+│   └── hpc/                    # SLURM jobs; submit from the repo root
 ├── setup.py
 ├── tests
-│   ├── dummy_data/
-│   ├── dummy_logs/
-│   ├── fixtures/
-│   ├── conftest.py
-│   ├── test_dependecies.py
-│   ├── test_dummy_training.py
-│   ├── test_pd_structure_parsing.py
-│   └── test_torch_installation.py
-└── verify_environment_installs.py
+│   ├── dummy_data/
+│   ├── dummy_logs/
+│   ├── fixtures/
+│   ├── conftest.py
+│   ├── test_dependecies.py
+│   ├── test_dummy_training.py
+│   ├── test_pd_structure_parsing.py
+│   └── test_torch_installation.py
+└── versions                    # overlays of alternative code versions (aug26, draft)
 ```
 
 ### License and Credit

@@ -1,0 +1,7 @@
+name: pigen
+channels:
+  - conda-forge
+dependencies:
+  - conda-forge::pyxtal
+  - conda-forge::python-dotenv
+  - conda-forge::chemparse

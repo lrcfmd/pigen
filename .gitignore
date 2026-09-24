@@ -1,5 +1,20 @@
 *.pyc
 __pycache__/
-data/Alex_MP_20_M_LED/*.csv
-checkpoints/*.ckpt
+.pytest_cache/
 *.ckpt
+
+# ---- data / results: kept on disk, not in git (only READMEs are tracked) ----
+data/**
+!data/**/
+!data/**/README*
+generated/**
+!generated/**/
+!generated/**/README*
+outputs/**
+!outputs/**/
+!outputs/**/README*
+analysis/**
+!analysis/**/
+!analysis/**/README*
+checkpoints/*
+!checkpoints/settings.yaml

@@ -1,0 +1,14 @@
+p95 phi:
+
+>>> corr = df['chgnet_energy'].corr(df['val_score'], method='spearman')
+0.60
+>>> corr = df['chgnet_energy'].corr(df['compactness'], method='spearman')
+-0.69
+>>> corr = df['chgnet_energy'].corr(df['spp_error'], method='spearman')
+0.77
+
+
+>>> df['chgnet_energy'].corr(df['spp_error'] -df['compactness'], method='spearman')
+0.84
+>>> corr = df['chgnet_energy'].corr(df['spp_error']+df['val_score'], method='spearman')
+0.91

@@ -2,10 +2,13 @@ LICENSE
 README.md
 setup.py
 pigen/__init__.py
+pigen/fine_tune.py
+pigen/fine_tune_detach.py
 pigen/generate.py
 pigen/partial_sample.py
 pigen/settings.py
 pigen/train.py
+pigen/train_detach.py
 pigen.egg-info/PKG-INFO
 pigen.egg-info/SOURCES.txt
 pigen.egg-info/dependency_links.txt
@@ -13,6 +16,8 @@ pigen.egg-info/top_level.txt
 pigen/assets/__init__.py
 pigen/assets/cspnet.py
 pigen/assets/diffusion_pi.py
+pigen/assets/diffusion_pi_cmptdiff.py
+pigen/assets/diffusion_pigate.py
 pigen/assets/simple_dataset.py
 pigen/common/__init__.py
 pigen/common/constants.py
@@ -23,7 +28,6 @@ pigen/common/utils.py
 pigen/eval/__init__.py
 pigen/eval/eval_utils.py
 tests/test_dependecies.py
-tests/test_dummy_generate.py
 tests/test_dummy_training.py
 tests/test_pd_structure_parsing.py
 tests/test_torch_installation.py

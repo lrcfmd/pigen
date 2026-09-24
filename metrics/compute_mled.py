@@ -171,10 +171,19 @@ class LocalEnvironmentDiversityCalculator:
                 
                 # 1. Polyhedral environment (coordination geometry)
                 try:
-                    op_fingerprint = self.featurizer.featurize(structure, site_idx)
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings("error", category=RuntimeWarning,
+                                                module="pymatgen")
+                        op_fingerprint = self.featurizer.featurize(structure, site_idx)
+                    
+                    if np.any(np.isnan(op_fingerprint)):
+                        warnings.warn(f"NaN fingerprint at site {site_idx}, skipping")
+                        continue
+                    
                     polyhedra_type = np.argmax(op_fingerprint)
                     site_features[site_idx, 2 * polyhedra_type] += 1
-                except Exception as e:
+                
+                except (Exception, RuntimeWarning) as e:
                     warnings.warn(f"Failed to compute polyhedra at site {site_idx}: {e}")
                     continue
                 

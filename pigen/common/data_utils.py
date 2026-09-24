@@ -97,16 +97,12 @@ def build_crystal(crystal_str, niggli=True, primitive=False):
     if niggli:
         crystal = crystal.get_reduced_structure()
 
-    try:
-        canonical_crystal = Structure(
-            lattice=Lattice.from_parameters(*crystal.lattice.parameters),
-            species=crystal.species,
-            coords=crystal.frac_coords,
-            coords_are_cartesian=False,
-        )
-    except:
-        print('Disordered struct ?!')
-
+    canonical_crystal = Structure(
+        lattice=Lattice.from_parameters(*crystal.lattice.parameters),
+        species=[site.species for site in crystal.sites],
+        coords=crystal.frac_coords,
+        coords_are_cartesian=False,
+    )
 
     for site in crystal.sites:
         if len(site.species.as_dict().items()) >1:
@@ -1161,11 +1157,12 @@ def get_scaler_from_data_list(data_list, key):
     return scaler
 
 def preprocess_simple(input_file, num_workers, niggli, primitive,prop_list, 
-                      use_space_group = False, tol=0.01, target_energy=False):
+                      use_space_group = False, tol=0.01, target_energy=False,
+                      target_column='target_energy'):
     
     def process_one_simple(row, niggli, primitive, prop_list, use_space_group = False, tol=0.01, target_energy=target_energy):
         if target_energy:
-            target_energy = row['target_energy']
+            target_energy = row[target_column]
         crystal_str = row['cif']
         crystal = build_crystal(crystal_str, niggli=niggli, primitive=primitive)
         result_dict = {}

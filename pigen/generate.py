@@ -15,9 +15,7 @@ from torch.utils.data import Dataset
 from typing import List, Optional, Tuple, Union 
 import yaml
 
-#from pigen.assets.diffusion_pi import CSPDiffusion
-#from pigen.assets.diffusion_pi_cmptdiff import CSPDiffusion
-from pigen.assets.diffusion_pigate import CSPDiffusion, ConstrainedCSPDiffusion
+from pigen.assets.diffusion_pi import CSPDiffusion, ConstrainedCSPDiffusion
 from pigen.common.constants import TRAIN_DIST
 from pigen.common.utils import set_logger
 from pigen.eval.eval_utils import (

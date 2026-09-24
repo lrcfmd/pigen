@@ -227,6 +227,7 @@ def main():
         print(f"Loading data from {input_path}...")
         df = pd.read_csv(input_path)
         print(f"Loaded {len(df)} rows")
+        print(df.columns)
     except Exception as e:
         print(f"Error loading CSV: {e}", file=sys.stderr)
         sys.exit(1)
@@ -237,13 +238,17 @@ def main():
             df_result = df.copy()
             compactness_values = []
             for cif_string in df[args.cif_column]:
-                try:
-                    structure = Structure.from_str(cif_string, fmt='cif')
-                    compactness_values.append(calculate_compactness(structure))
-                except Exception:
-                    compactness_values.append(np.nan)
+                structure = Structure.from_str(cif_string, fmt='cif')
+                compactness_values.append(calculate_compactness(structure))
+               #except Exception:
+               #    compactness_values.append(np.nan)
             df_result['compactness'] = compactness_values
             df_filtered = df_result
+            # for stats only
+            ddd = df_result[df_result['compactness']<0.85]
+            ddd = ddd[ddd['compactness']>0.3].shape[0]/ df_result.shape[0]
+            print('0.3<df_result<0.85:', round(ddd,2))
+
         else:
             df_filtered, _ = process_structures(
                 df,
